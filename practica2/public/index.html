@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hardware Store API</title>
+    <!-- Подключаем стили -->
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Сайдбар -->
+        <aside class="sidebar">
+            <div class="brand">
+                <h2>DEV_SHOP</span></h2>
+            </div>
+            
+            <div class="input-group">
+                <label>🔍 Search</label>
+                <input type="text" id="search-input" placeholder="Type to search..." oninput="loadProducts()">
+            </div>
+            
+            <div class="input-group">
+                <label>📂 Category Filter</label>
+                <select id="category-filter" onchange="loadProducts()">
+                    <option value="">All Categories</option>
+                    <option value="GPU">GPU</option>
+                    <option value="CPU">CPU</option>
+                    <option value="SSD">SSD</option>
+                    <option value="RAM">RAM</option>
+                </select>
+            </div>
+            
+            <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 20px 0;">
+
+            <div class="form-container">
+                <h3>Add New Item</h3>
+                <div class="input-group">
+                    <label>Title</label>
+                    <input type="text" id="title" placeholder="Product Name">
+                </div>
+                <div class="input-group">
+                    <label>Price</label>
+                    <input type="number" id="price" placeholder="Price">
+                </div>
+                <div class="input-group">
+                    <label>Category</label>
+                    <select id="category">
+                        <option value="GPU">GPU</option>
+                        <option value="CPU">CPU</option>
+                        <option value="SSD">SSD</option>
+                        <option value="RAM">RAM</option>
+                        <option value="Misc">Misc</option>
+                    </select>
+                </div>
+                <button onclick="addProduct()" class="btn-primary">Add Product</button>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-val" id="total-count">0</span>
+                    <span class="stat-label">Items</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-val" id="total-price">0</span>
+                    <span class="stat-label">Value</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Контент -->
+        <main class="main-content">
+            <header>
+                <h1>Inventory</h1>
+                <div class="controls">
+                    <select id="sort-select" onchange="loadProducts()" class="btn-refresh">
+                        <option value="">Sort by Default</option>
+                        <option value="price_asc">Price: Low to High</option>
+                        <option value="price_desc">Price: High to Low</option>
+                    </select>
+                </div>
+            </header>
+
+            <div id="products-grid" class="grid"></div>
+        </main>
+    </div>
+
+    <!-- Подключаем скрипт -->
+    <script src="script.js"></script>
+</body>
+</html>
