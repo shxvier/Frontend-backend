@@ -1,44 +1,53 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Карточка товара на SASS</title>
-  <link rel="stylesheet" href="css/style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gamer Product Card</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 </head>
 <body>
-  <main class="page">
-    <h1 class="page__title">Каталог товаров</h1>
 
-    <section class="product-list">
-      <article class="product-card">
-        <img
-          class="product-card__image"
-          src="img/janedoeplush.png"
-          alt="Плюшевая игрушка Jane Doe"
-          loading="lazy"
-        />
-        <h2 class="product-card__title">Плюшка Jane Doe</h2>
-        <p class="product-card__description">
-          Плюшевая игрушка Jane Doe из игры Zenless Zone Zero.
-        </p>
-        <p class="product-card__price">1 990 ₽</p>
-      </article>
+    <div class="card">
+        <div class="card__top">
+            <span class="card__badge">NEW</span>
+            <div class="card__img-wrapper">
+                <!-- ВАЖНО: mouse.png должен лежать в той же папке, что и этот html файл -->
+                <img 
+                    src="mouse.png" 
+                    alt="Logitech G PRO X Superlight"
+                    loading="lazy"
+                >
+            </div>
+        </div>
+        
+        <div class="card__body">
+            <h2 class="card__title">Logitech G PRO X Superlight</h2>
+            <p class="card__desc">Элитная беспроводная мышь. Вес менее 63 г, сенсор HERO 25K.</p>
+            
+            <div class="card__specs">
+                <div class="spec">
+                    <span class="spec__val">63g</span>
+                    <span class="spec__label">Weight</span>
+                </div>
+                <div class="spec">
+                    <span class="spec__val">25K</span>
+                    <span class="spec__label">DPI</span>
+                </div>
+                <div class="spec">
+                    <span class="spec__val">70h</span>
+                    <span class="spec__label">Battery</span>
+                </div>
+            </div>
 
-      <article class="product-card">
-        <img
-          class="product-card__image"
-          src="img/zipdota2.png"
-          alt="Зипхуди Дота 2 International"
-          loading="lazy"
-        />
-        <h2 class="product-card__title">Зипхуди Dota 2 TI</h2>
-        <p class="product-card__description">
-          Зипхуди Дота 2 International Сингапур, совместно с Adidas.
-        </p>
-        <p class="product-card__price">2 490 ₽</p>
-      </article>
-    </section>
-  </main>
+            <div class="card__footer">
+                <div class="card__price">14 990 ₽</div>
+                <button class="btn">Купить</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
+

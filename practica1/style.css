@@ -1,0 +1,144 @@
+/* Вставь это в style.css */
+body {
+  background-color: #0f1014;
+  font-family: 'Inter', sans-serif;
+  height: 100vh;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.card {
+  background: #18191d;
+  width: 320px;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid #25262c;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 0 10px rgba(0, 243, 255, 0.3), 0 0 20px rgba(0, 243, 255, 0.1);
+  border-color: rgba(0, 243, 255, 0.3);
+}
+
+.card:hover .card__img-wrapper img {
+  transform: scale(1.05) rotate(-2deg);
+}
+
+.card__top {
+  height: 220px;
+  background: radial-gradient(circle at center, #32343c, #18191d);
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.card__badge {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background: #00f3ff;
+  color: #000;
+  font-weight: 800;
+  font-size: 0.7rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  z-index: 2;
+}
+
+.card__img-wrapper {
+  width: 80%;
+}
+
+.card__img-wrapper img {
+  width: 100%;
+  height: auto;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5));
+}
+
+.card__body {
+  padding: 24px;
+}
+
+.card__title {
+  color: #ffffff;
+  font-size: 1.2rem;
+  margin: 0 0 8px;
+  letter-spacing: -0.5px;
+}
+
+.card__desc {
+  color: #8b8d96;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.card__specs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 24px;
+  border-top: 1px solid #25262c;
+  border-bottom: 1px solid #25262c;
+  padding: 12px 0;
+}
+
+.card__specs .spec {
+  text-align: center;
+}
+
+.card__specs .spec__val {
+  display: block;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.card__specs .spec__label {
+  font-size: 0.7rem;
+  color: #72747d;
+  text-transform: uppercase;
+}
+
+.card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card__price {
+  color: #ffffff;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.btn {
+  background: transparent;
+  border: 2px solid #00f3ff;
+  color: #00f3ff;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+}
+
+.btn:hover {
+  background: #00f3ff;
+  color: #000;
+  box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+}
+
+.btn:active {
+  transform: scale(0.95);
+}
