@@ -1,18 +1,42 @@
-# Контрольная работа №1: Магазин комплектующих
+# Практики по фронтенду и бэкенду
 
-**Выполнил:** [Твое Имя]
-[cite_start]**Дисциплина:** Фронтенд и бэкенд разработка [cite: 1]
+Этот репозиторий содержит несколько учебных практик. Актуальный итоговый проект по заданиям 7-12 находится в папке `practica7-12/`.
 
-## Описание
-Проект представляет собой Fullstack-приложение (React + Express) для управления каталогом товаров. 
-[cite_start]Реализован полный цикл CRUD и загрузка изображений[cite: 6].
+## Основной проект
 
-## Функционал
-- [cite_start]Отображение 10 предустановленных товаров[cite: 6].
-- Добавление новых товаров с загрузкой фото через Multer.
-- Удаление товаров.
-- Документация API через Swagger (http://localhost:3000/api-docs).
+`practica7-12` — fullstack-приложение на React + Express + SQLite:
 
-## Запуск
-1. Бэкенд: `cd backend && npm install && node app.js`
-2. Фронтенд: `cd frontend && npm install && npm start`
+- регистрация и вход
+- хеширование паролей через `bcrypt`
+- `JWT` access/refresh токены
+- хранение токенов на фронте
+- `RBAC` (`admin`, `moderator`, `user`)
+- `blacklist` токенов
+- защищенный CRUD товаров
+
+Подробное описание и команды запуска: [practica7-12/README.md](./practica7-12/README.md)
+
+## Быстрый запуск
+
+Backend:
+
+```bash
+cd practica7-12/backend
+npm install
+npm run dev
+```
+
+Frontend:
+
+```bash
+cd practica7-12/frontend
+npm install
+npm start
+```
+
+Проверка backend:
+
+```bash
+cd practica7-12/backend
+npm run smoke
+```

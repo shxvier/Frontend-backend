@@ -1,41 +1,44 @@
-# practica7-12
+# Практики 7-12
 
-Integrated practice for tasks 7-12:
+Итоговый учебный проект по практическим занятиям 7-12 по дисциплине «Фронтенд и бэкенд разработка».
 
-- password hashing with `bcrypt`
-- JWT access tokens
-- refresh token rotation
-- React frontend with token storage and axios interceptors
-- RBAC (`admin`, `moderator`, `user`)
-- token blacklist on logout
-- protected CRUD for products
-- SQLite persistence for users, products, refresh sessions and blacklist
+## Что реализовано
 
-Run backend:
+- хеширование паролей через `bcrypt`
+- `JWT` access-токены
+- refresh-токены с ротацией
+- хранение токенов на фронте
+- `RBAC` с ролями `admin`, `moderator`, `user`
+- `blacklist` токенов при выходе
+- защищенный CRUD товаров
+- загрузка изображений
+- SQLite для пользователей, товаров и сессий
+
+## Стек
+
+- frontend: React
+- backend: Express
+- database: SQLite
+
+## Запуск backend
 
 ```bash
 cd backend
 npm install
+copy .env.example .env
 npm run dev
 ```
 
-The backend stores data in `backend/practice-7-12.sqlite`.
-Configuration is loaded from `backend/.env` when present.
-For a quick API check you can also run:
+База данных создается в `backend/practice-7-12.sqlite`.
+
+Для быстрой проверки API:
 
 ```bash
 cd backend
 npm run smoke
 ```
 
-Example backend environment file:
-
-```bash
-cd backend
-copy .env.example .env
-```
-
-Run frontend:
+## Запуск frontend
 
 ```bash
 cd frontend
@@ -43,14 +46,17 @@ npm install
 npm start
 ```
 
-Demo users:
+По умолчанию frontend обращается к `http://localhost:3000`.
+При необходимости адрес API можно переопределить через `REACT_APP_API_URL`.
+
+## Демо-аккаунты
 
 - `admin / admin123`
 - `moderator / mod12345`
 - `user / user12345`
 
-Notes:
+## Особенности
 
-- public registration creates only the `user` role
-- higher roles are available through the demo accounts above
-- the frontend can be pointed to another backend with `REACT_APP_API_URL`
+- публичная регистрация создает только роль `user`
+- редактирование товара открывается в модальном окне
+- служебные админ-панели скрыты до отдельного открытия
