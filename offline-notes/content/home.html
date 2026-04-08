@@ -1,0 +1,21 @@
+<div class="home-content">
+    <h2 class="is-center">Отправить push сразу</h2>
+
+    <form id="note-form" class="row is-center">
+        <input class="col-9" type="text" id="note-input" placeholder="Введите текст уведомления" required>
+        <button class="col-3 button primary" type="submit">Отправить</button>
+    </form>
+
+    <p class="is-center form-help">Эта форма отправляет push-уведомление сразу после сохранения заметки.</p>
+
+    <form id="reminder-form" class="row is-center reminder-form">
+        <input class="col-5" type="text" id="reminder-text" placeholder="Текст отложенного уведомления" required>
+        <input class="col-4" type="datetime-local" id="reminder-time" required>
+        <button class="col-3 button success" type="submit">Запланировать</button>
+    </form>
+
+    <p class="is-center form-help">Эта форма создаёт отложенное push-уведомление на выбранные дату и время.</p>
+
+    <h2 class="is-center section-offset">Список заметок</h2>
+    <ul id="notes-list" class="notes-list"></ul>
+</div>
