@@ -196,6 +196,15 @@ function exec(sql) {
   });
 }
 
+async function ensureColumn(tableName, columnName, definition) {
+  const columns = await all(`PRAGMA table_info(${tableName})`);
+  const exists = columns.some((column) => column.name === columnName);
+
+  if (!exists) {
+    await run(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`);
+  }
+}
+
 async function initializeDatabase() {
   await exec(`
     PRAGMA foreign_keys = ON;
@@ -205,7 +214,10 @@ async function initializeDatabase() {
       username TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
       role TEXT NOT NULL,
-      created_at TEXT NOT NULL
+      created_at TEXT NOT NULL,
+      blocked INTEGER NOT NULL DEFAULT 0,
+      blocked_at TEXT,
+      blocked_by TEXT
     );
 
     CREATE TABLE IF NOT EXISTS products (
@@ -240,6 +252,10 @@ async function initializeDatabase() {
       expires_at INTEGER NOT NULL
     );
   `);
+
+  await ensureColumn('users', 'blocked', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn('users', 'blocked_at', 'TEXT');
+  await ensureColumn('users', 'blocked_by', 'TEXT');
 
   const usersCount = await get('SELECT COUNT(*) AS count FROM users');
   if (!usersCount || usersCount.count === 0) {
@@ -290,7 +306,10 @@ function publicUser(user) {
     id: user.id,
     username: user.username,
     role: user.role,
-    createdAt: user.created_at
+    createdAt: user.created_at,
+    isBlocked: Number(user.blocked) === 1,
+    blockedAt: user.blocked_at || null,
+    blockedBy: user.blocked_by || null
   };
 }
 
@@ -300,6 +319,9 @@ function normalizeUserSummary(row) {
     username: row.username,
     role: row.role,
     createdAt: row.created_at,
+    isBlocked: Number(row.blocked) === 1,
+    blockedAt: row.blocked_at || null,
+    blockedBy: row.blocked_by || null,
     productsCreated: Number(row.products_created || 0),
     activeSessions: Number(row.active_sessions || 0)
   };
@@ -327,6 +349,10 @@ function createTokenPayload(user) {
     username: user.username,
     role: user.role
   };
+}
+
+function isBlockedUser(user) {
+  return Number(user?.blocked) === 1;
 }
 
 function issueAccessToken(user) {
@@ -492,6 +518,10 @@ async function authMiddleware(req, res, next) {
       return res.status(401).json({ error: 'Пользователь не найден' });
     }
 
+    if (isBlockedUser(user)) {
+      return res.status(401).json({ error: 'Пользователь заблокирован администратором' });
+    }
+
     req.user = {
       ...payload,
       token,
@@ -545,11 +575,11 @@ app.post('/api/auth/register', async (req, res) => {
   }
 
   const normalizedUsername = String(username).trim().toLowerCase();
-  if (role && role !== 'user') {
-    return res.status(403).json({ error: 'Самостоятельная регистрация доступна только для обычного пользователя' });
-  }
+  const selectedRole = role ? String(role).trim() : 'user';
 
-  const selectedRole = 'user';
+  if (!VALID_ROLES.includes(selectedRole)) {
+    return res.status(400).json({ error: 'Указана недопустимая роль' });
+  }
   const existingUser = await get('SELECT id FROM users WHERE username = ?', [normalizedUsername]);
 
   if (existingUser) {
@@ -594,6 +624,10 @@ app.post('/api/auth/login', async (req, res) => {
 
   if (!user) {
     return res.status(401).json({ error: 'Неверный логин или пароль' });
+  }
+
+  if (isBlockedUser(user)) {
+    return res.status(403).json({ error: 'Пользователь заблокирован администратором' });
   }
 
   const isValidPassword = await bcrypt.compare(password, user.password_hash);
@@ -641,6 +675,12 @@ app.post('/api/auth/refresh', async (req, res) => {
     const user = await get('SELECT * FROM users WHERE id = ?', [payload.sub]);
     if (!user) {
       return res.status(401).json({ error: 'Пользователь не найден' });
+    }
+
+    if (isBlockedUser(user)) {
+      await run('DELETE FROM refresh_sessions WHERE user_id = ?', [payload.sub]);
+      await addTokenToBlacklist('blacklisted_refresh_tokens', payload);
+      return res.status(403).json({ error: 'Пользователь заблокирован администратором' });
     }
 
     await run('DELETE FROM refresh_sessions WHERE jti = ?', [payload.jti]);
@@ -712,12 +752,15 @@ app.get('/api/users', authMiddleware, authorizeRoles('admin'), async (req, res) 
         users.username,
         users.role,
         users.created_at,
+        users.blocked,
+        users.blocked_at,
+        users.blocked_by,
         COUNT(DISTINCT products.id) AS products_created,
         COUNT(DISTINCT refresh_sessions.jti) AS active_sessions
       FROM users
       LEFT JOIN products ON products.created_by = users.id
       LEFT JOIN refresh_sessions ON refresh_sessions.user_id = users.id
-      GROUP BY users.id, users.username, users.role, users.created_at
+      GROUP BY users.id, users.username, users.role, users.created_at, users.blocked, users.blocked_at, users.blocked_by
       ORDER BY
         CASE users.role
           WHEN 'admin' THEN 0
@@ -729,6 +772,64 @@ app.get('/api/users', authMiddleware, authorizeRoles('admin'), async (req, res) 
   );
 
   return res.json(rows.map(normalizeUserSummary));
+});
+
+app.patch('/api/users/:id/block', authMiddleware, authorizeRoles('admin'), async (req, res) => {
+  if (typeof req.body.blocked !== 'boolean') {
+    return res.status(400).json({ error: 'Поле blocked должно быть boolean' });
+  }
+
+  if (req.params.id === req.user.sub && req.body.blocked) {
+    return res.status(400).json({ error: 'Администратор не может заблокировать сам себя' });
+  }
+
+  const user = await get('SELECT * FROM users WHERE id = ?', [req.params.id]);
+  if (!user) {
+    return res.status(404).json({ error: 'Пользователь не найден' });
+  }
+
+  const blocked = req.body.blocked ? 1 : 0;
+  const blockedAt = blocked ? new Date().toISOString() : null;
+  const blockedBy = blocked ? req.user.sub : null;
+
+  await run(
+    `
+      UPDATE users
+      SET blocked = ?, blocked_at = ?, blocked_by = ?
+      WHERE id = ?
+    `,
+    [blocked, blockedAt, blockedBy, req.params.id]
+  );
+
+  if (blocked) {
+    await run('DELETE FROM refresh_sessions WHERE user_id = ?', [req.params.id]);
+  }
+
+  const updatedRow = await get(
+    `
+      SELECT
+        users.id,
+        users.username,
+        users.role,
+        users.created_at,
+        users.blocked,
+        users.blocked_at,
+        users.blocked_by,
+        COUNT(DISTINCT products.id) AS products_created,
+        COUNT(DISTINCT refresh_sessions.jti) AS active_sessions
+      FROM users
+      LEFT JOIN products ON products.created_by = users.id
+      LEFT JOIN refresh_sessions ON refresh_sessions.user_id = users.id
+      WHERE users.id = ?
+      GROUP BY users.id, users.username, users.role, users.created_at, users.blocked, users.blocked_at, users.blocked_by
+    `,
+    [req.params.id]
+  );
+
+  return res.json({
+    message: blocked ? 'Пользователь заблокирован' : 'Пользователь разблокирован',
+    user: normalizeUserSummary(updatedRow)
+  });
 });
 
 app.get('/api/products', authMiddleware, async (req, res) => {

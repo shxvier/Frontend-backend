@@ -16,6 +16,12 @@ const roleLabelMap = {
   user: 'Пользователь'
 };
 
+export const roleOptions = [
+  { value: 'user', label: roleLabelMap.user },
+  { value: 'moderator', label: roleLabelMap.moderator },
+  { value: 'admin', label: roleLabelMap.admin }
+];
+
 export function getCategoryLabel(category) {
   return categoryLabelMap[category] || category;
 }

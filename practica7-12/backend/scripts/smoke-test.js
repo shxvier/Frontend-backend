@@ -102,6 +102,7 @@ async function cleanup() {
 
 async function run() {
   const username = `smoke_${Date.now()}`;
+  const moderatorUsername = `smoke_mod_${Date.now()}`;
   const password = 'smoke12345';
 
   await waitForServer();
@@ -111,19 +112,20 @@ async function run() {
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ username, password })
+    body: JSON.stringify({ username, password, role: 'user' })
   });
   assert.equal(register.status, 201, 'register should create a user account');
-  assert.equal(register.data.user.role, 'user', 'public registration should only create user accounts');
+  assert.equal(register.data.user.role, 'user', 'public registration should allow explicit user role');
 
-  const registerAdminAttempt = await request('/api/auth/register', {
+  const registerModerator = await request('/api/auth/register', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ username: `${username}_admin`, password, role: 'admin' })
+    body: JSON.stringify({ username: moderatorUsername, password, role: 'moderator' })
   });
-  assert.equal(registerAdminAttempt.status, 403, 'public registration must reject privileged roles');
+  assert.equal(registerModerator.status, 201, 'public registration should allow moderator role');
+  assert.equal(registerModerator.data.user.role, 'moderator', 'registered moderator should keep selected role');
 
   const loginUser = await request('/api/auth/login', {
     method: 'POST',
@@ -167,12 +169,22 @@ async function run() {
   });
   assert.equal(usersByUser.status, 403, 'user role must not access admin users endpoint');
 
+  const blockByUser = await request(`/api/users/${register.data.user.id}/block`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${loginUser.data.accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ blocked: true })
+  });
+  assert.equal(blockByUser.status, 403, 'user role must not block accounts');
+
   const loginModerator = await request('/api/auth/login', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ username: 'moderator', password: 'mod12345' })
+    body: JSON.stringify({ username: moderatorUsername, password })
   });
   assert.equal(loginModerator.status, 200, 'moderator login should succeed');
 
@@ -266,6 +278,57 @@ async function run() {
     usersByAdmin.data.some((user) => user.username === username && user.role === 'user'),
     'users endpoint should include the registered smoke-test account'
   );
+  assert.ok(
+    usersByAdmin.data.some((user) => user.username === moderatorUsername && user.role === 'moderator'),
+    'users endpoint should include the registered moderator account'
+  );
+
+  const blockUser = await request(`/api/users/${register.data.user.id}/block`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${refresh.data.accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ blocked: true })
+  });
+  assert.equal(blockUser.status, 200, 'admin should block users');
+  assert.equal(blockUser.data.user.isBlocked, true, 'blocked user should be marked as blocked');
+
+  const blockedUserMe = await request('/api/auth/me', {
+    headers: {
+      Authorization: `Bearer ${loginUser.data.accessToken}`
+    }
+  });
+  assert.equal(blockedUserMe.status, 401, 'blocked user access token should stop working');
+
+  const blockedUserLogin = await request('/api/auth/login', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ username, password })
+  });
+  assert.equal(blockedUserLogin.status, 403, 'blocked user should not log in');
+
+  const unblockUser = await request(`/api/users/${register.data.user.id}/block`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${refresh.data.accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ blocked: false })
+  });
+  assert.equal(unblockUser.status, 200, 'admin should unblock users');
+  assert.equal(unblockUser.data.user.isBlocked, false, 'unblocked user should become active again');
+
+  const unblockedUserLogin = await request('/api/auth/login', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ username, password })
+  });
+  assert.equal(unblockedUserLogin.status, 200, 'unblocked user should log in again');
 
   const logout = await request('/api/auth/logout', {
     method: 'POST',

@@ -135,6 +135,9 @@ export const authApi = {
 export const adminApi = {
   listUsers() {
     return api.get('/users');
+  },
+  setUserBlocked(userId, blocked) {
+    return api.patch(`/users/${userId}/block`, { blocked });
   }
 };
 

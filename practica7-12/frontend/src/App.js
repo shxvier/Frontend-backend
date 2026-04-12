@@ -12,11 +12,12 @@ import {
   resolveAssetUrl,
   saveTokens
 } from './api';
-import { categoryOptions, getCategoryLabel, getRoleLabel } from './labels';
+import { categoryOptions, getCategoryLabel, getRoleLabel, roleOptions } from './labels';
 
 const emptyAuthForm = {
   username: '',
-  password: ''
+  password: '',
+  role: 'user'
 };
 
 const initialFilters = {
@@ -42,6 +43,7 @@ export default function App() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [blacklistLoading, setBlacklistLoading] = useState(false);
   const [usersLoading, setUsersLoading] = useState(false);
+  const [userActionId, setUserActionId] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [blacklistStats, setBlacklistStats] = useState(null);
@@ -154,9 +156,10 @@ export default function App() {
       if (mode === 'register') {
         await authApi.register({
           username: authForm.username,
-          password: authForm.password
+          password: authForm.password,
+          role: authForm.role
         });
-        setMessage('Регистрация завершена. Новые аккаунты создаются с ролью пользователя.');
+        setMessage(`Регистрация завершена. Роль: ${getRoleLabel(authForm.role)}.`);
         setMode('login');
         setAuthForm((current) => ({ ...emptyAuthForm, username: current.username }));
       } else {
@@ -201,6 +204,7 @@ export default function App() {
     setEditingProduct(null);
     setAdminToolsOpen(false);
     setBlacklistStats(null);
+    setUserActionId('');
     setUsers([]);
     setMessage('Сеанс завершен.');
   }
@@ -320,6 +324,22 @@ export default function App() {
     }
   }
 
+  async function handleToggleUserBlock(targetUser) {
+    setUserActionId(targetUser.id);
+    setError('');
+
+    try {
+      const nextBlocked = !targetUser.isBlocked;
+      const response = await adminApi.setUserBlocked(targetUser.id, nextBlocked);
+      setUsers((current) => current.map((user) => (user.id === targetUser.id ? response.data.user : user)));
+      setMessage(response.data.message);
+    } catch (toggleError) {
+      setError(toggleError.response?.data?.error || 'Не удалось изменить статус пользователя.');
+    } finally {
+      setUserActionId('');
+    }
+  }
+
   function handleResetFilters() {
     setFilters(initialFilters);
   }
@@ -373,9 +393,19 @@ export default function App() {
             </label>
 
             {mode === 'register' ? (
-              <p className="panel__hint">
-                Самостоятельная регистрация создает только роль <strong>пользователь</strong>.
-              </p>
+              <>
+                <label>
+                  <span>Роль</span>
+                  <select name="role" value={authForm.role} onChange={handleAuthFieldChange}>
+                    {roleOptions.map((role) => (
+                      <option key={role.value} value={role.value}>
+                        {role.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <p className="panel__hint">При регистрации можно сразу выбрать роль аккаунта.</p>
+              </>
             ) : null}
 
             {message ? <div className="notice notice--success">{message}</div> : null}
@@ -571,7 +601,14 @@ export default function App() {
                 </section>
               ) : null}
 
-              <UsersPanel users={users} loading={usersLoading} onReload={loadUsers} />
+              <UsersPanel
+                users={users}
+                loading={usersLoading}
+                currentUserId={user.id}
+                pendingUserId={userActionId}
+                onReload={loadUsers}
+                onToggleBlock={handleToggleUserBlock}
+              />
             </section>
           ) : null}
 
